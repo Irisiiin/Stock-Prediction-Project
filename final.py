@@ -70,7 +70,7 @@ train_df = df.loc[train_idx].copy().reset_index(drop=True)
 test_df = df.loc[test_idx].copy().reset_index(drop=True)
 
 # =========================================================
-# 🆕 CLS (FIXED)
+# 🆕 CLS 
 # =========================================================
 
 def get_cls_embeddings(texts, batch_size=16):
@@ -122,7 +122,7 @@ train_df = pd.concat([train_df.reset_index(drop=True), cls_train_df], axis=1)
 test_df = pd.concat([test_df.reset_index(drop=True), cls_test_df], axis=1)
 
 # =========================================================
-# 🆕 TF-IDF (FIXED)
+# 🆕 TF-IDF 
 # =========================================================
 
 tfidf = TfidfVectorizer(max_features=5)
@@ -150,7 +150,6 @@ test_df = pd.concat([test_df, tfidf_test_df], axis=1)
 
 # =========================================================
 # SENTIMENT MODEL
-# (UNCHANGED)
 # =========================================================
 
 def get_sentiment_batch(texts, batch_size=32):
@@ -217,7 +216,7 @@ train_df = compute_sentiment(train_df)
 test_df = compute_sentiment(test_df)
 
 # =========================================================
-# SENTIMENT LAGS + FEATURES (UNCHANGED)
+# SENTIMENT LAGS + FEATURES 
 # =========================================================
 
 sent_cols = [
@@ -264,7 +263,7 @@ def get_market_signals(text):
 
 
 # =========================================================
-# FEATURE ENGINEERING (UNCHANGED)
+# FEATURE ENGINEERING 
 # =========================================================
 
 for df_ in [train_df, test_df]:
@@ -313,7 +312,7 @@ for df_ in [train_df, test_df]:
 
 
 # =========================================================
-# FEATURE SELECTION (FIXED)
+# FEATURE SELECTION
 # =========================================================
 
 #drop_cols = ["Date", "target", "combined_headline", "headline_list","news_t","news_lag1", "news_lag2","news_lag3"]+ list(tfidf_train_df.columns) + list(cls_train_df.columns)
@@ -352,13 +351,13 @@ xgb_model.fit(X_train, y_train)
 # RESULTS
 # =========================================================
 
-# 1. Get the probabilities for the 'Up' class (Class 1)
+
 test_probs = xgb_model.predict_proba(X_test)[:, 1]
 
 custom_threshold = 0.539
 test_preds_conservative = (test_probs >= custom_threshold).astype(int)
 
-# 3. Evaluate
+
 print(classification_report(y_test, test_preds_conservative))
 
 print("\n================ FINAL TEST RESULTS ================")
