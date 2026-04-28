@@ -1,5 +1,5 @@
 # Stock Prediction from Financial News
-**Group 1 — CS 1671, University of Pittsburgh**  
+**Group 6 Market prediction from financial news - group 1 — CS 1671, University of Pittsburgh**  
 Irisin Yu · Astalaxmi Dhanaseelan · Ciara Dwyer · Yifei Tian · Sanjana Pejathaya
 
 Predicting S&P 500 intraday direction (close ≥ open) from same-day financial news headlines.  
