@@ -238,6 +238,11 @@ System~5 (Multi-Headline LinearSVC) illustrates a failure mode: with TN = 3 and 
 \paragraph{Error-driven refinement.} The 101 false positives share a pattern of mildly negative macroeconomic headlines on days of positive market momentum. A targeted data collection strategy—adding headlines from days with strong momentum reversals—could address this error cluster.
 
 % ============================================================
+\section*{Acknowledgments}
+
+Code and experiments are available at \url{https://github.com/Irisiiin/Stock-Prediction-Project}.
+
+% ============================================================
 \section*{Limitations}
 
 Our dataset covers only the S\&P 500 index and does not generalize directly to individual equities or other markets. The headline collection methodology is not fully documented, and there may be survivorship bias in which news sources are represented. All systems are evaluated on a single chronological split; results may vary across different time periods, particularly during extreme market events (e.g., the 2008 financial crisis, COVID-19 crash). The Gemma3-4B model's training data cutoff may overlap with our test period, raising a potential data contamination concern that we cannot fully rule out. Additionally, transaction costs, slippage, and market impact are not modeled—the accuracy numbers should not be interpreted as direct trading profitability estimates.
@@ -254,7 +259,7 @@ Automated market prediction systems carry significant societal risks. If deploye
 
 \begin{itemize}
   \item \textbf{Irisin Yu}: Multi-headline FinBERT aggregation pipeline; Feature Tokenizer Transformer implementation and training; Gemma3-4B zero-shot system design and API integration; prompt engineering; near-flat day filtering; writing report.
-  \item \textbf{Astalaxmi Dhanaseelan}: Data collection and preprocessing; FinBERT single-pass sentiment extraction; LinearSVC model implementation; writing Data section and baseline descriptions.
+  \item \textbf{Astalaxmi Dhanaseelan}: Data collection and preprocessing; FinBERT single-pass sentiment extraction; LinearSVC and XGBoost combination model implementation; writing Data section and baseline descriptions.
   \item \textbf{Ciara Dwyer}: LLaMA-based LLM prompt system (zero-shot and few-shot); prompt template design; evaluation framework; writing Introduction and Discussion.
   \item \textbf{Yifei Tian}: Feature engineering (technical indicators: RSI, moving averages, volume ratio, gap open); hyperparameter tuning; error analysis; writing Future Work and Limitations.
   \item \textbf{Sanjana Pejathaya}: Dataset curation and labeling; exploratory data analysis; polish report; evaluation metrics implementation; writing Abstract and Ethical Issues.

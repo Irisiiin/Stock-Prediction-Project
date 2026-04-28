@@ -1,14 +1,14 @@
 # Fdb version 4
-["bibtex acl_latex"] 1777405885.04968 "acl_latex.aux" "acl_latex.bbl" "acl_latex" 1777406230.4493 2
+["bibtex acl_latex"] 1777407334.71343 "acl_latex.aux" "acl_latex.bbl" "acl_latex" 1777407336.30591 0
   "./acl_natbib.bst" 1777359595.5435 45186 3d1af46d62cc9172ef6e42b56c1cd613 ""
   "./custom.bib" 1777402988.50622 3188 c1a3f2bd6a5d63324a1c367a8f426b79 ""
-  "acl_latex.aux" 1777406230.03945 7370 e7221f7f39565542eea20f5dd6b1d0ad "pdflatex"
+  "acl_latex.aux" 1777407335.89442 8073 814c5f9836129b465eb55546f3b33a81 "pdflatex"
   (generated)
   "acl_latex.bbl"
   "acl_latex.blg"
   (rewritten before read)
-["pdflatex"] 1777406228.99958 "/Users/irisinyu/Desktop/CS1671 /projects/github/Stock-Prediction-Project/Association_for_Computational_Linguistics__ACL__conference/latex/acl_latex.tex" "acl_latex.pdf" "acl_latex" 1777406230.4495 0
-  "/Users/irisinyu/Desktop/CS1671 /projects/github/Stock-Prediction-Project/Association_for_Computational_Linguistics__ACL__conference/latex/acl_latex.tex" 1777406225.62025 23586 ce15e585179453aa4ef308ee8d9f8620 ""
+["pdflatex"] 1777407334.8713 "/Users/irisinyu/Desktop/CS1671 /projects/github/Stock-Prediction-Project/Association_for_Computational_Linguistics__ACL__conference/latex/acl_latex.tex" "acl_latex.pdf" "acl_latex" 1777407336.3061 0
+  "/Users/irisinyu/Desktop/CS1671 /projects/github/Stock-Prediction-Project/Association_for_Computational_Linguistics__ACL__conference/latex/acl_latex.tex" 1777407332.95852 23800 07d6ec8b9ea188456be8c2f28035e5c9 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-0.enc" 1558214095 7631 5169ff1acd97ff1c4ab83563c99f96f4 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -162,10 +162,10 @@
   "/usr/local/texlive/2025/texmf-var/web2c/pdftex/pdflatex.fmt" 1741450574 3345740 46b66fdb0378f7bf5921b5eabf1762b8 ""
   "/usr/local/texlive/2025/texmf.cnf" 1741450484 577 418a7058ec8e006d8704f60ecd22c938 ""
   "acl.sty" 1777359595.53903 11615 e2c027f483aa40e577ed34264c8b0655 ""
-  "acl_latex.aux" 1777406230.03945 7370 e7221f7f39565542eea20f5dd6b1d0ad "pdflatex"
-  "acl_latex.bbl" 1777405885.30495 0 d41d8cd98f00b204e9800998ecf8427e "bibtex acl_latex"
-  "acl_latex.out" 1777406230.04044 4142 112b4f5a8866c7861bf90a7551c125cc "pdflatex"
-  "acl_latex.tex" 1777406225.62025 23586 ce15e585179453aa4ef308ee8d9f8620 ""
+  "acl_latex.aux" 1777407335.89442 8073 814c5f9836129b465eb55546f3b33a81 "pdflatex"
+  "acl_latex.bbl" 1777407334.86778 3014 7582752b0996c0fad25acb2e0ab84386 "bibtex acl_latex"
+  "acl_latex.out" 1777407335.89553 4142 112b4f5a8866c7861bf90a7551c125cc "pdflatex"
+  "acl_latex.tex" 1777407332.95852 23800 07d6ec8b9ea188456be8c2f28035e5c9 ""
   (generated)
   "acl_latex.aux"
   "acl_latex.log"
