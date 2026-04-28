@@ -1,3 +1,4 @@
+# %%
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
@@ -31,39 +32,47 @@ y_test = test_df["label"]
 
 #setup
 LLM_API_KEY = "sk-j49dRg-v03_qWy-1xijenA"
+CACHE_FILE = "deepseek_cache.json"
 
-cache = {}
+import json, os
+
+# Persistent cache: survives crashes and restarts
+if os.path.exists(CACHE_FILE):
+    with open(CACHE_FILE) as f:
+        cache = json.load(f)
+else:
+    cache = {}
 
 def run_llm(prompt, model="deepseek-r1", return_first_line=False):
-    
-    cache_key = (prompt, model, return_first_line)
-    
+    cache_key = f"{model}||{prompt}"
+
     if cache_key in cache:
         return cache[cache_key]
 
     client = OpenAI(
         api_key=LLM_API_KEY,
-        base_url="https://ol.sci.pitt.edu"
+        base_url="https://ol.sci.pitt.edu",
+        timeout=60.0,
     )
 
     response_text = None
 
-    for i in range(0, 60, 6):
+    for attempt, wait in enumerate([0, 6, 15]):
         try:
             response = client.completions.create(
                 model=model,
                 prompt=prompt,
                 temperature=0,
-                max_tokens=300,
+                max_tokens=1024,
                 top_p=1,
+                timeout=60,
             )
-
             response_text = response.choices[0].text.strip()
             break
-
         except Exception as e:
-            print("Retry error:", e)
-            sleep(i)
+            print(f"Retry {attempt+1}/3 error: {e}")
+            if wait:
+                sleep(wait)
 
     if response_text is None:
         return None
@@ -73,6 +82,9 @@ def run_llm(prompt, model="deepseek-r1", return_first_line=False):
         response_text = response_text.split('.')[0] + '.'
 
     cache[cache_key] = response_text
+    with open(CACHE_FILE, "w") as f:
+        json.dump(cache, f)
+
     return response_text
 
 #prompts and helpers
@@ -121,7 +133,7 @@ def build_few_prompt(headlines, examples):
 Input:
 {row['combined_headline']}
 Output:
-{row['label']}
+{"up" if row['label'] == 1 else "down"}
 """
 
     return f"""
@@ -200,13 +212,13 @@ labelsF = []
 X_test_full = X_test
 y_test_full = y_test
 
+few_shot_examples = get_few_shot_examples(train_df)  # fixed seed=42, compute once
+
 for i in tqdm(range(len(X_test_full))):
 
     headlines = X_test_full.iloc[i]["combined_headline"]
 
-    examples = get_few_shot_examples(train_df)
-    
-    prompt = build_few_prompt(headlines, examples)
+    prompt = build_few_prompt(headlines, few_shot_examples)
     output = run_llm(prompt)
     
     predF = parse_output(output)
@@ -221,3 +233,5 @@ print("Precision:", precision_score(labelsF, predsF))
 print("Recall:", recall_score(labelsF, predsF))
 print("F1:", f1_score(labelsF, predsF))
 evaluate_model(" deepseek‑r1: Few-Shot", labelsF, predsF)
+
+# %%

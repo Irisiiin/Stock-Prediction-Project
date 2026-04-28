@@ -1,3 +1,4 @@
+# %%
 import pandas as pd
 import numpy as np
 import re
@@ -28,7 +29,7 @@ torch.manual_seed(42)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
 finbert_model = AutoModelForSequenceClassification.from_pretrained(model_name).to(device)
-bert_model = AutoModel.from_pretrained(model_name).to(device)
+bert_model = finbert_model.bert
 
 # =========================================================
 # LOAD DATA
@@ -59,12 +60,9 @@ df["news_lag3"] = df["news_t"].shift(3).fillna("")
 # TRAIN / TEST SPLIT
 # =========================================================
 
-train_idx, test_idx = train_test_split(
-    df.index,
-    test_size=0.2,
-    random_state=42,
-    stratify=df["target"]
-)
+split_index = int(len(df) * 0.8)
+train_idx = df.index[:split_index]
+test_idx = df.index[split_index:]
 
 train_df = df.loc[train_idx].copy().reset_index(drop=True)
 test_df = df.loc[test_idx].copy().reset_index(drop=True)
@@ -125,7 +123,7 @@ test_df = pd.concat([test_df.reset_index(drop=True), cls_test_df], axis=1)
 # 🆕 TF-IDF 
 # =========================================================
 
-tfidf = TfidfVectorizer(max_features=5)
+tfidf = TfidfVectorizer(max_features=5000, ngram_range=(1, 2), stop_words="english")
 
 train_text = (
     train_df["news_t"] + " " +
@@ -142,8 +140,9 @@ test_text = (
 tfidf_train = tfidf.fit_transform(train_text).toarray()
 tfidf_test = tfidf.transform(test_text).toarray()
 
-tfidf_train_df = pd.DataFrame(tfidf_train, columns=[f"tfidf_{i}" for i in range(5)])
-tfidf_test_df = pd.DataFrame(tfidf_test, columns=[f"tfidf_{i}" for i in range(5)])
+n_tfidf = tfidf_train.shape[1]
+tfidf_train_df = pd.DataFrame(tfidf_train, columns=[f"tfidf_{i}" for i in range(n_tfidf)])
+tfidf_test_df = pd.DataFrame(tfidf_test, columns=[f"tfidf_{i}" for i in range(n_tfidf)])
 
 train_df = pd.concat([train_df, tfidf_train_df], axis=1)
 test_df = pd.concat([test_df, tfidf_test_df], axis=1)
@@ -188,9 +187,9 @@ def compute_sentiment(df):
 
         sentiments = get_sentiment_batch(headlines)
 
-        neg = sentiments[:, 0]
-        neu = sentiments[:, 1]
-        pos = sentiments[:, 2]
+        pos = sentiments[:, 0]
+        neg = sentiments[:, 1]
+        neu = sentiments[:, 2]
 
         neg_mean.append(np.mean(neg))
         neu_mean.append(np.mean(neu))
@@ -388,3 +387,5 @@ importance = pd.DataFrame({
 
 print("\n===== TOP 20 FEATURES =====")
 print(importance.head(20))
+
+# %%

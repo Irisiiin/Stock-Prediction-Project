@@ -1,0 +1,5 @@
+config.py
+*.npy
+*.pyc
+__pycache__/
+.DS_Store

@@ -4,6 +4,7 @@ from tqdm import tqdm
 from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score, f1_score
 from openai import OpenAI
 from time import sleep
+import json, os
 
 #data and split
 df = pd.read_csv("sp500_headlines_with_prices.csv")
@@ -31,39 +32,43 @@ y_test = test_df["label"]
 
 #setup
 LLM_API_KEY = "sk-j49dRg-v03_qWy-1xijenA"
+CACHE_FILE = "llama_cache.json"
 
-cache = {}
+if os.path.exists(CACHE_FILE):
+    with open(CACHE_FILE) as f:
+        cache = json.load(f)
+else:
+    cache = {}
 
 def run_llm(prompt, model="llama3.1", return_first_line=False):
-    
-    cache_key = (prompt, model, return_first_line)
-    
+    cache_key = f"{model}||{return_first_line}||{prompt}"
+
     if cache_key in cache:
         return cache[cache_key]
 
     client = OpenAI(
         api_key=LLM_API_KEY,
-        base_url="https://ol.sci.pitt.edu"
+        base_url="https://ol.sci.pitt.edu",
+        timeout=30.0,
     )
 
     response_text = None
 
-    for i in range(0, 60, 6):
+    for attempt, wait in enumerate([0, 6, 15]):
         try:
             response = client.completions.create(
                 model=model,
                 prompt=prompt,
                 temperature=0,
-                max_tokens=300,
+                max_tokens=50,
                 top_p=1,
             )
-
             response_text = response.choices[0].text.strip()
             break
-
         except Exception as e:
-            print("Retry error:", e)
-            sleep(i)
+            print(f"Retry {attempt+1}/3 error: {e}")
+            if wait:
+                sleep(wait)
 
     if response_text is None:
         return None
@@ -73,6 +78,8 @@ def run_llm(prompt, model="llama3.1", return_first_line=False):
         response_text = response_text.split('.')[0] + '.'
 
     cache[cache_key] = response_text
+    with open(CACHE_FILE, "w") as f:
+        json.dump(cache, f)
     return response_text
 
 #prompts and helpers
@@ -121,7 +128,7 @@ def build_few_prompt(headlines, examples):
 Input:
 {row['combined_headline']}
 Output:
-{row['label']}
+{"up" if row['label'] == 1 else "down"}
 """
 
     return f"""

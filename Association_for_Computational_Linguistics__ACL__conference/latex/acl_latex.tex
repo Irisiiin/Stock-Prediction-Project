@@ -1,0 +1,294 @@
+\documentclass[11pt]{article}
+\usepackage[final]{acl}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{array}
+
+\title{Predicting S\&P 500 Intraday Direction from Financial News:\\
+FinBERT-Based Supervised Systems vs.\ Gemma3 Zero-Shot Reasoning}
+
+\author{[Author Names] \\
+  University of Pittsburgh \\
+  \texttt{[emails]}}
+
+\begin{document}
+\maketitle
+
+% ============================================================
+\begin{abstract}
+We investigate whether same-day financial news headlines can predict S\&P 500 intraday price direction (close $\geq$ open). Using a dataset of 3,507 trading days from 2008 to 2024, we design and evaluate six systems. Traditional NLP approaches extract three-dimensional sentiment features from FinBERT \citep{araci2019finbert} and combine them with price-based technical indicators, feeding these features into classifiers including LinearSVC, XGBoost, and a Feature Tokenizer Transformer \citep{gorishniy2021revisiting}. Our LLM approach prompts Gemma3-4B \citep{gemma2025} in a zero-shot setting to predict market direction directly from raw headline text. Gemma3-4B achieves \textbf{73.8\%} accuracy, outperforming the best supervised system by 8.8 percentage points (65.0\%), and surpassing the majority-class baseline (53.5\%) by over 20 points. Our results suggest that large-scale pretraining enables qualitative financial reasoning that domain-specific fine-tuning on limited data cannot match.
+\end{abstract}
+
+% ============================================================
+\section{Introduction}
+
+Predicting short-term stock market movements is a fundamental challenge in quantitative finance. News sentiment is known to influence market prices \citep{loughran2011liability}, making NLP a natural tool for extracting predictive signals from financial text. As LLMs have demonstrated strong zero-shot reasoning across many domains \citep{brown2020gpt3}, it is an open question whether general-purpose LLMs can outperform specialized, fine-tuned sentiment models for financial prediction.
+
+In this project, we compare two paradigms on a 16-year S\&P 500 dataset:
+\begin{enumerate}
+  \item \textbf{Traditional NLP:} Extract sentiment probabilities from FinBERT (a BERT model fine-tuned on financial text) and combine them with price-based technical indicators, then train classical or deep learning classifiers.
+  \item \textbf{LLM Zero-Shot:} Provide raw headlines to Gemma3-4B with a structured prompt, asking it to reason directly about market direction without any task-specific training.
+\end{enumerate}
+
+\paragraph{Task definition.} The task is binary classification: given the financial news headlines published before market close on a trading day, predict whether the S\&P 500 closes \emph{above} its opening price on that day (label~1) or \emph{at or below} (label~0). This is a realistic intraday prediction task: all features—headlines, the opening price, and prior-day technical indicators—are observable before close.
+
+\paragraph{Example.} Consider the following input headlines from a single trading day:
+\begin{quote}
+\small\textit{``Fed raises interest rates by 75 basis points amid persistent inflation concerns''} $\sim$ \textit{``Tech stocks fall sharply as bond yields surge''} $\sim$ \textit{``Consumer confidence index drops to 18-month low''}
+\end{quote}
+The correct output is \textbf{0} (market closed lower). FinBERT assigns high negative probability to the concatenated text. Gemma3-4B directly reasons that rate hikes, falling tech stocks, and low consumer confidence signal a down day.
+
+\paragraph{Summary of results.} Gemma3-4B achieves 73.8\% accuracy in zero-shot mode, compared to 65.0\% for our best supervised model (Multi-Headline FT-Transformer) and 64.1\% for the FinBERT$\to$LinearSVC baseline.
+
+% ============================================================
+\section{Data}
+\label{sec:data}
+
+\paragraph{Dataset.} We use a proprietary dataset of S\&P 500 daily records spanning \textbf{2008--2024}, with 3,507 trading days. Each record contains: (1)~the date, (2)~open, close, high, and low prices, (3)~trading volume, and (4)~financial news headlines from that day. Headlines from multiple sources are stored in two formats: a single concatenated string (for single-pass FinBERT) and a tilde-separated multi-headline string (for per-headline FinBERT processing).
+
+\paragraph{Preprocessing.} We apply two preprocessing steps. First, we define the binary label as $y = \mathbf{1}[\text{close} \geq \text{open}]$. Second, for the multi-headline experiments, we filter out ``near-flat'' days where $|\text{close}-\text{open}|/\text{open} < 0.2\%$, retaining only days with a meaningful directional movement. This filtering reduces the dataset from 3,507 to \textbf{2,572 days} and removes ambiguous training signal. After filtering, the class distribution is 55.4\% up and 44.6\% down.
+
+\paragraph{Multi-headline statistics.} The tilde-separated dataset contains \textbf{14,297} individual headlines across 2,572 days, averaging \textbf{5.6 headlines per day}. These are scored individually by FinBERT and then aggregated per day.
+
+\paragraph{Train/test split.} All experiments use a \textbf{chronological 80/20 split} to prevent data leakage. For the full dataset (no filter), the training set contains 2,793 days and the test set 699 days. For the filtered dataset (multi-headline experiments), training contains 2,045 days and test 512--515 days.
+
+\paragraph{Feature dimensions.} Table~\ref{tab:features} summarizes the feature sets used by each system.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lp{4.5cm}}
+\toprule
+\textbf{Feature} & \textbf{Description} \\
+\midrule
+\texttt{sent\_pos/neg/neu} & FinBERT softmax probabilities (3-dim) \\
+\texttt{gap\_open} & (today open $-$ yesterday close) / yesterday close \\
+\texttt{prev\_ma5\_ratio} & Yesterday close / 5-day moving average \\
+\texttt{prev\_rsi14} & 14-day RSI (shifted by 1 day) \\
+\texttt{prev\_vol\_ratio} & Yesterday volume / 5-day avg volume \\
+\midrule
+\texttt{sent\_pos\_mean/max} & Per-day mean and max of FinBERT positive prob \\
+\texttt{sent\_neg\_mean/max} & Per-day mean and max of FinBERT negative prob \\
+\texttt{sent\_neu\_mean} & Per-day mean of FinBERT neutral prob \\
+\texttt{sent\_variance} & Variance of positive prob across headlines \\
+\texttt{n\_headlines} & Number of headlines that day \\
+\bottomrule
+\end{tabular}
+\caption{Feature definitions. Top block: 7 features used in baseline combination models. Full set of 11 features (top + bottom) used in multi-headline models.}
+\label{tab:features}
+\end{table}
+
+% ============================================================
+\section{Methods}
+\label{sec:methods}
+
+\subsection{FinBERT Sentiment Extraction (All Supervised Models)}
+
+All traditional systems share a common first stage: sentiment feature extraction via \textbf{FinBERT} \citep{araci2019finbert}, a BERT \citep{devlin2019bert} model fine-tuned on financial news corpora (Financial PhraseBank \citep{malo2014gooddebt} and financial news). FinBERT outputs a three-dimensional softmax distribution over \{positive, negative, neutral\}. These three probabilities are treated as continuous features.
+
+For the single-headline setting, FinBERT is applied once per day to the concatenated headline string (max 512 tokens, truncated). For the multi-headline setting, FinBERT is applied to each of the 14,297 individual headlines independently (batch size 64, max 128 tokens), producing a 3-dim probability vector per headline. These are then aggregated per day into 7 statistics: mean and max of positive and negative probabilities, mean of neutral probability, variance of positive probability, and headline count.
+
+\subsection{System 1: FinBERT $\to$ LinearSVC (Baseline)}
+\label{sec:baseline}
+
+This is the \textbf{StockPredict} baseline. FinBERT produces a 3-dim sentiment vector for each day. The vector is passed to a \textbf{LinearSVC} \citep{cortes1995svm} with default hyperparameters ($C=1.0$, max\_iter=5000), wrapped in \texttt{CalibratedClassifierCV} to enable probability outputs. Features are standardized via \texttt{StandardScaler} fit on the training set. Input dimension: $\mathbb{R}^3$. Output: $\{0, 1\}$.
+
+\subsection{System 2: FinBERT + Price Features $\to$ LinearSVC / XGBoost}
+
+We augment the 3-dim FinBERT features with 4 price-based technical indicators (Table~\ref{tab:features}, top block), forming a \textbf{7-dimensional input}. The same LinearSVC is trained on this richer representation. We also train \textbf{XGBoost} \citep{chen2016xgboost} ($n\_\text{estimators}=300$, $\text{max\_depth}=3$, $\text{lr}=0.05$, early stopping at 30 rounds) as a non-linear alternative. All features standardized. The price features are computed exclusively from prior-day or same-morning data to avoid lookahead leakage.
+
+\subsection{System 3: FinBERT + Price Features $\to$ Feature Tokenizer Transformer}
+
+We replace the classical classifiers with a \textbf{Feature Tokenizer (FT) Transformer} \citep{gorishniy2021revisiting}, designed for tabular data. Each of the 7 scalar features $x_i$ is projected into a $d_{\text{model}}=32$ embedding via a learned per-feature linear map: $\mathbf{e}_i = x_i \cdot \mathbf{w}_i + \mathbf{b}_i$. A learnable \texttt{[CLS]} token is prepended, and the sequence of 8 tokens ($1 + 7$) is processed by 2 Transformer encoder layers (pre-norm, 2 attention heads, FFN dimension 64, dropout 0.3). The \texttt{[CLS]} output is passed through a 2-layer MLP (32$\to$16$\to$1) to produce a binary logit. Total trainable parameters: \textbf{18,241}. Trained with AdamW ($\text{lr}=3\times10^{-4}$, weight decay $10^{-3}$), cosine annealing over 150 epochs, early stopping (patience 25).
+
+\subsection{System 4: Multi-Headline FinBERT $\to$ FT-Transformer}
+
+We extend System~3 by replacing the 3-dim single-day FinBERT vector with 7 per-day aggregated statistics (Table~\ref{tab:features}), combined with the same 4 price features, yielding an \textbf{11-dimensional input}. The FT-Transformer architecture is identical to System~3 (now with 11+1=12 tokens; 18,433 parameters). The dataset is additionally filtered to remove near-flat days ($< 0.2\%$ intraday move). This is our strongest supervised model.
+
+\subsection{System 5: Multi-Headline FinBERT $\to$ LinearSVC}
+
+We apply the same 11-dimensional multi-headline features to a LinearSVC classifier, serving as an ablation to isolate the effect of the Transformer architecture vs.\ the richer feature set.
+
+\subsection{System 6: Gemma3-4B Zero-Shot (LLM System)}
+
+Our LLM system calls \textbf{Gemma3-4B-IT} \citep{gemma2025} via the University of Pittsburgh inference API. No fine-tuning is performed. For each test day, we construct a prompt containing all headlines and request a single-digit answer. The full prompt template is shown in Appendix~\ref{sec:prompt}. We use greedy decoding (temperature 0, max 5 new tokens). Responses are parsed: ``0'' is interpreted as \emph{up}, ``1'' as \emph{down}. Results are cached to avoid redundant API calls. The model receives no price data—only raw text.
+
+% ============================================================
+\section{Results and Evaluation}
+\label{sec:results}
+
+\subsection{Main Results}
+
+Table~\ref{tab:main} presents accuracy and ROC-AUC for all systems. The majority-class baseline predicts ``up'' for every day.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{System} & \textbf{Acc.} & \textbf{ROC-AUC} \\
+\midrule
+Majority baseline (always up) & 52.8\% & -- \\
+\midrule
+\textit{Traditional NLP systems} & & \\
+~~S1: FinBERT $\to$ LinearSVC & 64.1\% & -- \\
+~~S2a: +Price $\to$ LinearSVC & 64.2\% & 0.680 \\
+~~S2b: +Price $\to$ XGBoost & 62.4\% & 0.653 \\
+~~S3: +Price $\to$ FT-Transformer & 62.2\% & 0.640 \\
+~~S4: Multi-Sent $\to$ FT-Transformer & \textbf{65.0\%} & \textbf{0.679} \\
+~~S5: Multi-Sent $\to$ LinearSVC & 53.9\%$^\dagger$ & 0.648 \\
+\midrule
+\textit{LLM system} & & \\
+~~S6: Gemma3-4B Zero-Shot & \textbf{73.8\%} & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on test set. $^\dagger$S5 suffers class collapse (predicts ``up'' for 99.6\% of test instances). S1--S3 use 699 test days; S4--S5 use 512 test days (after near-flat filter); S6 uses 515 test days.}
+\label{tab:main}
+\end{table}
+
+\subsection{Detailed Classification Results}
+
+Table~\ref{tab:detail} shows per-class precision, recall, and F1 for the three most informative systems: the best supervised model (S4), the collapsed LinearSVC (S5), and Gemma3 (S6).
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llccc}
+\toprule
+\textbf{System} & \textbf{Class} & \textbf{P} & \textbf{R} & \textbf{F1} \\
+\midrule
+\multirow{2}{*}{S4: Multi-Sent FT-Trans.} & Down (0) & 0.61 & 0.67 & 0.64 \\
+ & Up (1) & 0.69 & 0.64 & 0.66 \\
+\midrule
+\multirow{2}{*}{S5: Multi-Sent LinearSVC} & Down (0) & 0.75 & 0.01 & 0.02 \\
+ & Up (1) & 0.54 & 1.00 & 0.70 \\
+\midrule
+\multirow{2}{*}{S6: Gemma3-4B Zero-Shot} & Up (0) & 0.84 & 0.63 & 0.72 \\
+ & Down (1) & 0.67 & 0.86 & 0.75 \\
+\bottomrule
+\end{tabular}
+\caption{Per-class metrics for key systems. Note: in S6, label~0 = up and label~1 = down (reversed from S1--S5).}
+\label{tab:detail}
+\end{table}
+
+\subsection{Combination System Feature Importance}
+
+For the LinearSVC in System~2a, the learned coefficients reveal which features are most predictive. \texttt{gap\_open} dominates ($+0.238$), indicating that the opening gap is the strongest bullish signal. Among sentiment features, \texttt{sent\_pos} ($+0.096$) is the next most important, while \texttt{sent\_neg} ($-0.068$) is a bearish signal. For XGBoost (S2b), feature importances confirm this ordering: \texttt{gap\_open} (0.26), \texttt{sent\_pos} (0.15), \texttt{prev\_rsi14} (0.14), \texttt{sent\_neg} (0.14).
+
+\subsection{Error Analysis: Gemma3-4B (S6)}
+
+Gemma3-4B was evaluated on 515 test days. All responses were parseable (0 skipped). The confusion matrix is:
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+ & \textbf{Predicted Up} & \textbf{Predicted Down} \\
+\midrule
+\textbf{Actual Up} & TN = 175 & FP = 101 \\
+\textbf{Actual Down} & FN = 34 & TP = 205 \\
+\bottomrule
+\end{tabular}
+\caption{Confusion matrix for Gemma3-4B (label 0=up, 1=down).}
+\label{tab:cm}
+\end{table}
+
+\paragraph{False Positives (FP = 101).} Gemma3 predicted ``down'' on 101 days that actually closed up. Examining these cases, a common pattern is mixed or mildly negative headlines that do not overcome underlying market momentum. For example, on days with headlines about geopolitical tensions but no major domestic economic data, Gemma3 tends to predict conservatively negative, even when the market absorbs the news and closes higher.
+
+\paragraph{False Negatives (FN = 34).} Gemma3 missed only 34 actual down days, predicting ``up.'' These tend to involve technically positive headline sentiment (e.g., strong earnings reports) on days where broader macro conditions caused a sell-off—a nuance that even Gemma3 cannot fully capture without access to real-time price context.
+
+\paragraph{Key observation.} The asymmetry (FN = 34 vs.\ FP = 101) reflects a bearish bias in Gemma3's zero-shot behavior: it is more conservative about predicting ``up'' than ``down.'' This caution benefits overall accuracy given the nearly balanced class distribution.
+
+\subsection{Error Analysis: System 5 (Class Collapse)}
+
+System~5 (Multi-Headline LinearSVC) illustrates a failure mode: with TN = 3 and FN = 1, the model predicts ``up'' for 508 of 512 test days. Despite a reasonably high ROC-AUC (0.648), the linear boundary collapses entirely toward the majority class. Adding \texttt{class\_weight=`balanced'} did not resolve this, suggesting the 11 multi-headline features do not provide linearly separable signal in this filtered dataset. The FT-Transformer architecture (S4) overcomes this via attention-based feature interaction.
+
+% ============================================================
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{Why does Gemma3 dominate?} The 8.8-point gap between Gemma3 (73.8\%) and the best supervised model (65.0\%) is substantial. FinBERT compresses each headline into a 3-dimensional sentiment vector, discarding named entities, event types, causal chains, and financial domain knowledge. Gemma3 processes the full text: it can distinguish between ``Fed raises rates amid inflation'' (bearish) and ``Fed signals pause in rate hikes'' (bullish), even though both contain the word ``rate.'' Furthermore, Gemma3's pretraining corpus presumably includes financial commentary, historical event-market relationships, and economic theory, giving it broad prior knowledge that 2,045 training examples cannot impart to a smaller supervised model.
+
+\paragraph{Why does the Transformer underperform LinearSVC?} With only $\sim$2,000 training samples, the FT-Transformer (18K parameters) does not benefit significantly from its capacity advantage over LinearSVC. The Transformer's self-attention mechanism requires sufficient data diversity to learn meaningful cross-feature interactions. In this regime, the linear boundary found by LinearSVC is more robust to overfitting.
+
+\paragraph{Multi-headline aggregation.} Replacing the single FinBERT pass with per-headline scoring and 7 aggregated statistics improved accuracy from 62.2\% to 65.0\% (+2.8 pp) for the FT-Transformer. This confirms that per-headline diversity metrics (variance, max) capture signal that the concatenated-string approach loses. Notably, \texttt{gap\_open} remains the dominant price feature across all supervised models, suggesting that the overnight gap already encodes much of the near-term sentiment visible to market participants.
+
+% ============================================================
+\section{Future Work}
+\label{sec:future}
+
+\paragraph{Few-shot prompting.} Gemma3 was evaluated only in zero-shot mode. Adding a small number of in-context examples (few-shot) could further improve accuracy by anchoring the model's output format and calibrating its priors \citep{brown2020gpt3}. Preliminary exploration suggests 3--6 examples covering both up and down days would be sufficient.
+
+\paragraph{Next-day prediction.} All our systems target same-day intraday direction. A more practically useful task is predicting the \emph{next} day's open vs.\ today's close. We explored this formulation with a separate LLaMA-based system; extending Gemma3 to this target would enable direct comparison.
+
+\paragraph{Larger LLMs.} Gemma3-12B or similar larger models may further improve zero-shot accuracy, albeit with greater compute cost. A systematic scaling study could determine whether the performance gains justify the inference overhead.
+
+\paragraph{Ensemble approaches.} Combining Gemma3's probabilistic soft outputs with FinBERT-based features in a late-fusion ensemble could capture complementary signals: the LLM's qualitative reasoning and the supervised model's quantitative price indicators.
+
+\paragraph{Error-driven refinement.} The 101 false positives share a pattern of mildly negative macroeconomic headlines on days of positive market momentum. A targeted data collection strategy—adding headlines from days with strong momentum reversals—could address this error cluster.
+
+% ============================================================
+\section*{Limitations}
+
+Our dataset covers only the S\&P 500 index and does not generalize directly to individual equities or other markets. The headline collection methodology is not fully documented, and there may be survivorship bias in which news sources are represented. All systems are evaluated on a single chronological split; results may vary across different time periods, particularly during extreme market events (e.g., the 2008 financial crisis, COVID-19 crash). The Gemma3-4B model's training data cutoff may overlap with our test period, raising a potential data contamination concern that we cannot fully rule out. Additionally, transaction costs, slippage, and market impact are not modeled—the accuracy numbers should not be interpreted as direct trading profitability estimates.
+
+% ============================================================
+\section*{Ethical Issues}
+
+Automated market prediction systems carry significant societal risks. If deployed at scale, they could amplify market volatility by creating feedback loops between news sentiment and algorithmic trading. The dataset contains real-world financial news, and any errors in prediction could, in a deployed context, lead to financial losses for users who trust the system's outputs. We emphasize that this project is purely academic and the systems described here are not intended for deployment. Furthermore, the financial news corpus may reflect existing biases in financial media coverage, potentially over-representing certain sectors, geographies, or market conditions.
+
+% ============================================================
+\section*{Group Member Task Breakdown}
+
+\begin{itemize}
+  \item \textbf{Member 1}: Data collection and preprocessing; implementation of FinBERT feature extraction pipeline; per-headline multi-headline aggregation; writing Sections~\ref{sec:data} and \ref{sec:methods}.
+  \item \textbf{Member 2}: Implementation of LinearSVC and XGBoost combination models; FT-Transformer architecture design and training; hyperparameter tuning; writing Sections~\ref{sec:results} and \ref{sec:discussion}.
+  \item \textbf{Member 3}: Gemma3 zero-shot system design and API integration; prompt engineering; error analysis; writing Abstract, Introduction, and Future Work.
+\end{itemize}
+
+% ============================================================
+\bibliography{custom}
+
+% ============================================================
+\appendix
+
+\section{Gemma3-4B Prompt Template}
+\label{sec:prompt}
+
+The following prompt is used verbatim for each test instance. \texttt{\{headlines\}} is replaced with the actual headline string for that trading day.
+
+\begin{quote}
+\small
+\texttt{You are a financial market analyst.}\\
+\texttt{}\\
+\texttt{Below are S\&P 500 news headlines from one trading day.}\\
+\texttt{Predict whether the S\&P 500 will close HIGHER or LOWER}\\
+\texttt{than its opening price that same day.}\\
+\texttt{}\\
+\texttt{Reply with a single digit only --- no spaces, no punctuation,}\\
+\texttt{no other text:}\\
+\texttt{0  means the market closes UP (close >= open)}\\
+\texttt{1  means the market closes DOWN (close < open)}\\
+\texttt{}\\
+\texttt{Headlines:}\\
+\texttt{\{headlines\}}\\
+\texttt{}\\
+\texttt{Answer:}
+\end{quote}
+
+Temperature is set to 0 (greedy decoding) and \texttt{max\_tokens} is set to 5. The model reliably outputs a single digit with no additional text.
+
+\section*{Sharing Permission}
+
+We are okay with the instructor sharing this report after the course ends.
+
+\end{document}

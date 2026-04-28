@@ -31,8 +31,11 @@ y_test = test_df["label"]
 
 model_name = "ProsusAI/finbert"
 
+device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+print("Using device:", device)
+
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSequenceClassification.from_pretrained(model_name)
+model = AutoModelForSequenceClassification.from_pretrained(model_name).to(device)
 
 def finbert_predict(text):
 
@@ -43,13 +46,14 @@ def finbert_predict(text):
         padding=True,
         max_length=512
     )
+    inputs = {k: v.to(device) for k, v in inputs.items()}
 
     with torch.no_grad():
         outputs = model(**inputs)
 
     probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
 
-    labels = ["up", "flat", "down"]
+    labels = ["up", "down", "flat"]
     pred_label = labels[torch.argmax(probs).item()]
 
     return pred_label
