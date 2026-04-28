@@ -11,13 +11,14 @@
 \usepackage{amsmath}
 \usepackage{multirow}
 \usepackage{array}
+\usepackage{amssymb}
 
 \title{Predicting S\&P 500 Intraday Direction from Financial News:\\
 FinBERT-Based Supervised Systems vs.\ Gemma3 Zero-Shot Reasoning}
 
-\author{[Author Names] \\
-  University of Pittsburgh \\
-  \texttt{[emails]}}
+\author{Irisin Yu \and Astalaxmi Dhanaseelan \and Ciara Dwyer \and Yifei Tian \and Sanjana Pejathaya \\
+  Group 1: Market Prediction from Financial News \\
+  University of Pittsburgh}
 
 \begin{document}
 \maketitle
@@ -249,10 +250,14 @@ Automated market prediction systems carry significant societal risks. If deploye
 % ============================================================
 \section*{Group Member Task Breakdown}
 
+\textbf{Group 1: Market Prediction from Financial News}
+
 \begin{itemize}
-  \item \textbf{Member 1}: Data collection and preprocessing; implementation of FinBERT feature extraction pipeline; per-headline multi-headline aggregation; writing Sections~\ref{sec:data} and \ref{sec:methods}.
-  \item \textbf{Member 2}: Implementation of LinearSVC and XGBoost combination models; FT-Transformer architecture design and training; hyperparameter tuning; writing Sections~\ref{sec:results} and \ref{sec:discussion}.
-  \item \textbf{Member 3}: Gemma3 zero-shot system design and API integration; prompt engineering; error analysis; writing Abstract, Introduction, and Future Work.
+  \item \textbf{Irisin Yu}: Multi-headline FinBERT aggregation pipeline; Feature Tokenizer Transformer implementation and training; Gemma3-4B zero-shot system design and API integration; prompt engineering; near-flat day filtering; writing report.
+  \item \textbf{Astalaxmi Dhanaseelan}: Data collection and preprocessing; FinBERT single-pass sentiment extraction; LinearSVC model implementation; writing Data section and baseline descriptions.
+  \item \textbf{Ciara Dwyer}: LLaMA-based LLM prompt system (zero-shot and few-shot); prompt template design; evaluation framework; writing Introduction and Discussion.
+  \item \textbf{Yifei Tian}: Feature engineering (technical indicators: RSI, moving averages, volume ratio, gap open); hyperparameter tuning; error analysis; writing Future Work and Limitations.
+  \item \textbf{Sanjana Pejathaya}: Dataset curation and labeling; exploratory data analysis; polish report; evaluation metrics implementation; writing Abstract and Ethical Issues.
 \end{itemize}
 
 % ============================================================

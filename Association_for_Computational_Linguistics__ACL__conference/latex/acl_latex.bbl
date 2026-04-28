@@ -1,25 +1,67 @@
-\begin{thebibliography}{4}
+\begin{thebibliography}{9}
 \providecommand{\natexlab}[1]{#1}
 
-\bibitem[{Ando and Zhang(2005)}]{Ando2005}
-Rie~Kubota Ando and Tong Zhang. 2005.
-\newblock A framework for learning predictive structures from multiple tasks and unlabeled data.
-\newblock \emph{Journal of Machine Learning Research}, 6:1817--1853.
+\bibitem[{Araci(2019)}]{araci2019finbert}
+Dogu Araci. 2019.
+\newblock \href {https://arxiv.org/abs/1908.10063} {{FinBERT}: Financial
+  sentiment analysis with pre-trained language models}.
+\newblock \emph{arXiv preprint arXiv:1908.10063}.
 
-\bibitem[{Andrew and Gao(2007)}]{andrew2007scalable}
-Galen Andrew and Jianfeng Gao. 2007.
-\newblock Scalable training of {L1}-regularized log-linear models.
-\newblock In \emph{Proceedings of the 24th International Conference on Machine Learning}, pages 33--40.
+\bibitem[{Brown et~al.(2020)Brown, Mann, Ryder, Subbiah, Kaplan, Dhariwal
+  et~al.}]{brown2020gpt3}
+Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared~D Kaplan, Prafulla
+  Dhariwal, and 1 others. 2020.
+\newblock \href {https://arxiv.org/abs/2005.14165} {Language models are
+  few-shot learners}.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~33, pages 1877--1901.
 
-\bibitem[{Gusfield(1997)}]{Gusfield:97}
-Dan Gusfield. 1997.
-\newblock \emph{Algorithms on Strings, Trees and Sequences}.
-\newblock Cambridge University Press, Cambridge, UK.
+\bibitem[{Chen and Guestrin(2016)}]{chen2016xgboost}
+Tianqi Chen and Carlos Guestrin. 2016.
+\newblock \href {https://doi.org/10.1145/2939672.2939785} {{XGBoost}: A
+  scalable tree boosting system}.
+\newblock In \emph{Proceedings of the 22nd ACM SIGKDD International Conference
+  on Knowledge Discovery and Data Mining}, pages 785--794.
 
-\bibitem[{Rasooli and Tetreault(2015)}]{rasooli-tetrault-2015}
-Mohammad~Sadegh Rasooli and Joel~R. Tetreault. 2015.
-\newblock \href {http://arxiv.org/abs/1503.06733} {Yara parser: {A} fast and accurate dependency parser}.
-\newblock \emph{Computing Research Repository}, arXiv:1503.06733.
-\newblock Version 2.
+\bibitem[{Cortes and Vapnik(1995)}]{cortes1995svm}
+Corinna Cortes and Vladimir Vapnik. 1995.
+\newblock \href {https://doi.org/10.1007/BF00994018} {Support-vector networks}.
+\newblock \emph{Machine Learning}, 20(3):273--297.
+
+\bibitem[{Devlin et~al.(2019)Devlin, Chang, Lee, and
+  Toutanova}]{devlin2019bert}
+Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. 2019.
+\newblock \href {https://aclanthology.org/N19-1423} {{BERT}: Pre-training of
+  deep bidirectional transformers for language understanding}.
+\newblock In \emph{Proceedings of the 2019 Conference of the North American
+  Chapter of the Association for Computational Linguistics}, pages 4171--4186.
+
+\bibitem[{{Gemma Team}(2025)}]{gemma2025}
+{Gemma Team}. 2025.
+\newblock \href {https://arxiv.org/abs/2503.19786} {Gemma 3 technical report}.
+\newblock \emph{arXiv preprint arXiv:2503.19786}.
+
+\bibitem[{Gorishniy et~al.(2021)Gorishniy, Rubachev, Khrulkov, and
+  Babenko}]{gorishniy2021revisiting}
+Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, and Artem Babenko. 2021.
+\newblock \href {https://arxiv.org/abs/2106.11959} {Revisiting deep learning
+  models for tabular data}.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~34, pages 18932--18943.
+
+\bibitem[{Loughran and McDonald(2011)}]{loughran2011liability}
+Tim Loughran and Bill McDonald. 2011.
+\newblock \href {https://doi.org/10.1111/j.1540-6261.2010.01625.x} {When is a
+  liability not a liability? textual analysis, dictionaries, and 10-ks}.
+\newblock \emph{The Journal of Finance}, 66(1):35--65.
+
+\bibitem[{Malo et~al.(2014)Malo, Sinha, Korhonen, Wallenius, and
+  Takala}]{malo2014gooddebt}
+Pekka Malo, Ankur Sinha, Pekka Korhonen, Jyrki Wallenius, and Pyry Takala.
+  2014.
+\newblock \href {https://doi.org/10.1002/asi.23062} {Good debt or bad debt:
+  Detecting semantic orientations in economic texts}.
+\newblock \emph{Journal of the American Society for Information Science and
+  Technology}, 65(4):782--796.
 
 \end{thebibliography}
